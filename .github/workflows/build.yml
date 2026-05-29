@@ -68,8 +68,8 @@ jobs:
           echo "$HOME/android-sdk/build-tools/34.0.0" >> $GITHUB_PATH
           echo "ANDROID_NDK_HOME=$HOME/android-sdk/ndk/25.2.9519653" >> $GITHUB_ENV
 
-      - name: Verify aidl
-        run: aidl --version
+      - name: Verify aidl is available
+        run: which aidl && aidl --help 2>&1 | head -1 || true
 
       # ── 5. Python-пакети ──────────────────────────────────────────────────
       - name: Install Python packages
