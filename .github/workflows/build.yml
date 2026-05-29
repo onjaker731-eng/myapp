@@ -31,11 +31,11 @@ jobs:
       - name: Install Android build tools
         run: |
           sdkmanager "build-tools;33.0.2" "platforms;android-33" "ndk;25.2.9519653"
-          echo "$ANDROID_HOME/build-tools/33.0.2" >> $GITHUB_PATH
 
       - name: Build APK
         run: |
-          export ANDROIDNDK=$ANDROID_NDK_HOME
+          export ANDROIDSDK=$ANDROID_HOME
+          export ANDROIDNDK=$ANDROID_HOME/ndk/25.2.9519653
           export ANDROIDAPI=33
           export ANDROIDMINAPI=24
           buildozer android debug
