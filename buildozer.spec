@@ -7,7 +7,7 @@ source.include_exts = py,png,jpg,kv,atlas
 version = 1.0
 
 # Залежності
-requirements = python3==3.11.0,kivy==2.3.0,yt-dlp
+requirements = python3,kivy==2.3.0,yt-dlp
 
 # Орієнтація
 orientation = portrait
