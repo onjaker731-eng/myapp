@@ -13,18 +13,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # ── 1. Java 17 (обов'язково для sdkmanager 16.0) ──────────────────────
+      # ── 1. Java 17 ────────────────────────────────────────────────────────
       - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "17"
 
-      # ── 2. Python ─────────────────────────────────────────────────────────
-      - name: Set up Python 3.11
+      # ── 2. Python 3.11.15 точно (p4a не підтримує 3.14) ─────────────────
+      - name: Set up Python 3.11.15
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.11.15"
 
       # ── 3. Системні залежності ────────────────────────────────────────────
       - name: Install system dependencies
@@ -38,7 +38,7 @@ jobs:
             cmake libffi-dev libssl-dev \
             build-essential
 
-      # ── 4. Android SDK (без setup-android — він тягне старий sdkmanager) ──
+      # ── 4. Android SDK ────────────────────────────────────────────────────
       - name: Download Android command-line tools
         run: |
           CMDTOOLS_URL="https://dl.google.com/android/repository/commandlinetools-linux-12266719_latest.zip"
