@@ -10,54 +10,93 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Set up Python
+      # ── 1. Java 17 (обов'язково для sdkmanager 16.0) ──────────────────────
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      # ── 2. Python ─────────────────────────────────────────────────────────
+      - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
+      # ── 3. Системні залежності ────────────────────────────────────────────
       - name: Install system dependencies
         run: |
-          sudo apt-get update
+          sudo apt-get update -qq
           sudo apt-get install -y \
-            git zip unzip openjdk-17-jdk \
-            python3-pip autoconf libtool \
-            pkg-config zlib1g-dev libncurses5-dev \
-            libncursesw5-dev libtinfo6 cmake \
-            libffi-dev libssl-dev
+            git zip unzip \
+            autoconf libtool \
+            pkg-config zlib1g-dev \
+            libncurses5-dev libncursesw5-dev \
+            cmake libffi-dev libssl-dev \
+            build-essential
 
-      - name: Set up Android SDK & NDK (includes AIDL)
-        uses: android-actions/setup-android@v3
-
-      - name: Install Android Build Tools (contains aidl)
+      # ── 4. Android SDK (без setup-android — він тягне старий sdkmanager) ──
+      - name: Download Android command-line tools
         run: |
-          sdkmanager "build-tools;34.0.0" \
-                     "platforms;android-34" \
-                     "ndk;25.2.9519653"
+          CMDTOOLS_URL="https://dl.google.com/android/repository/commandlinetools-linux-12266719_latest.zip"
+          mkdir -p $HOME/android-sdk/cmdline-tools
+          cd /tmp
+          wget -q "$CMDTOOLS_URL" -O cmdtools.zip
+          unzip -q cmdtools.zip
+          mv cmdline-tools $HOME/android-sdk/cmdline-tools/latest
 
-      - name: Add aidl to PATH
+      - name: Set ANDROID_HOME env
         run: |
-          echo "$ANDROID_HOME/build-tools/34.0.0" >> $GITHUB_PATH
+          echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
+          echo "$HOME/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
+          echo "$HOME/android-sdk/platform-tools"           >> $GITHUB_PATH
+
+      - name: Accept licenses & install SDK packages
+        run: |
+          yes | sdkmanager --licenses || true
+          sdkmanager \
+            "platform-tools" \
+            "platforms;android-34" \
+            "build-tools;34.0.0" \
+            "ndk;25.2.9519653"
+
+      - name: Add build-tools (aidl) to PATH
+        run: |
+          echo "$HOME/android-sdk/build-tools/34.0.0" >> $GITHUB_PATH
+          echo "ANDROID_NDK_HOME=$HOME/android-sdk/ndk/25.2.9519653" >> $GITHUB_ENV
 
       - name: Verify aidl
         run: aidl --version
 
-      - name: Install Buildozer & yt-dlp
+      # ── 5. Python-пакети ──────────────────────────────────────────────────
+      - name: Install Python packages
         run: |
-          pip install buildozer yt-dlp cython
+          pip install --upgrade pip
+          pip install buildozer cython yt-dlp
 
-      - name: Cache Buildozer global dir
+      # ── 6. Кеш Buildozer ──────────────────────────────────────────────────
+      - name: Cache Buildozer global directory
         uses: actions/cache@v4
         with:
           path: ~/.buildozer
           key: buildozer-${{ runner.os }}-${{ hashFiles('buildozer.spec') }}
+          restore-keys: |
+            buildozer-${{ runner.os }}-
 
-      - name: Build APK
-        run: buildozer android debug
+      # ── 7. Збірка APK ─────────────────────────────────────────────────────
+      - name: Build debug APK
+        env:
+          ANDROID_HOME: ${{ env.ANDROID_HOME }}
+          ANDROID_NDK_HOME: ${{ env.ANDROID_NDK_HOME }}
+        run: buildozer -v android debug
 
-      - name: Upload APK
+      # ── 8. Завантаження артефакту ─────────────────────────────────────────
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: youtube-downloader-apk
+          name: youtube-downloader-debug
           path: bin/*.apk
+          if-no-files-found: error
