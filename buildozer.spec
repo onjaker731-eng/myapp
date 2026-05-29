@@ -6,8 +6,12 @@ source.dir = .
 source.include_exts = py,png,jpg,kv,atlas
 version = 1.0
 
-# Залежності
+# Залежності — без явної версії python3, p4a сам узгодить пару hostpython3/python3
+# Але фіксуємо через p4a_python_version щоб гарантовано взяти 3.11
 requirements = python3,kivy==2.3.0,yt-dlp
+
+# Примусово 3.11 для p4a
+p4a.python_version = 3.11
 
 # Орієнтація
 orientation = portrait
